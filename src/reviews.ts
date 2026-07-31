@@ -41,6 +41,15 @@ const STAR_VALUES: Record<string, number> = {
 
 const MAX_PAGE_SIZE = 50;
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export interface ReviewReply {
   text: string;
   /** ISO 8601, when the reply was last posted/edited. */
@@ -177,12 +186,12 @@ export async function getBusinessReviews(
   const reviews: BusinessReview[] = raw
     .filter((r) => r.comment && r.starRating)
     .filter((r) => filterMinStars === undefined || STAR_VALUES[r.starRating!] >= filterMinStars)
-    .slice(0, limit)
-    .map(toBusinessReview);
+    .map(toBusinessReview)
+    .slice(0, limit);
 
   return {
     averageRating: averageRating ?? null,
     totalReviewCount: totalReviewCount ?? reviews.length,
-    reviews,
+    reviews: shuffleArray(reviews),
   };
 }
