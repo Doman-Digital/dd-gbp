@@ -42,6 +42,14 @@ var STAR_VALUES = {
   FIVE: 5
 };
 var MAX_PAGE_SIZE = 50;
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 var EMPTY = {
   averageRating: null,
   totalReviewCount: 0,
@@ -91,11 +99,11 @@ async function getBusinessReviews(options = {}) {
     totalReviewCount = data.totalReviewCount ?? totalReviewCount;
     pageToken = data.nextPageToken;
   } while (pageToken && (limit === void 0 || raw.length < limit));
-  const reviews = raw.filter((r) => r.comment && r.starRating).filter((r) => filterMinStars === void 0 || STAR_VALUES[r.starRating] >= filterMinStars).slice(0, limit).map(toBusinessReview);
+  const reviews = raw.filter((r) => r.comment && r.starRating).filter((r) => filterMinStars === void 0 || STAR_VALUES[r.starRating] >= filterMinStars).map(toBusinessReview).slice(0, limit);
   return {
     averageRating: averageRating ?? null,
     totalReviewCount: totalReviewCount ?? reviews.length,
-    reviews
+    reviews: shuffleArray(reviews)
   };
 }
 export {

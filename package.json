@@ -1,6 +1,6 @@
 {
   "name": "@domandigital/gbp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Zero-dependency Google Business Profile client: OAuth refresh-token auth and a reviews (with owner replies) fetch, shared across Doman Digital / IDS client sites.",
   "license": "UNLICENSED",
