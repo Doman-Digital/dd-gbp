@@ -1,0 +1,49 @@
+name: CI
+
+# Runs on every push to main and every pull request. This is the gate that was
+# missing: before it, tests only ran when someone remembered to run them
+# locally, and `release.yml` only fires on a tag -- long after a bad commit has
+# already been merged.
+#
+# The Node matrix is not decoration. `engines` claims >=20, and a claim nothing
+# executes is a guess; this is what makes the declared floor true.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.x', '22.x', '24.x']
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build

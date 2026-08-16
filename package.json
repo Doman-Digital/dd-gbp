@@ -30,12 +30,13 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
     "vitest": "^2.1.9"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "packageManager": "pnpm@9.15.9",
   "repository": {
