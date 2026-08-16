@@ -1,0 +1,59 @@
+name: Release
+
+# Publishes on tag push using npm trusted publishing (OIDC). No npm token is
+# stored anywhere: GitHub mints a short-lived OIDC token scoped to this single
+# workflow run, and npm verifies it against the trusted publisher configured on
+# the package. That also produces a provenance attestation, so a consumer can
+# verify the tarball was built from this commit by this workflow.
+#
+# One-time bootstrap: the first publish of a package cannot use OIDC, because
+# the package does not exist yet and so has no trusted-publisher config to
+# attach to. Do that first publish manually with `npm login && npm publish`,
+# then configure the trusted publisher on npmjs.com pointing at this file.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      # Trusted publishing needs npm >= 11.5.1, newer than the npm bundled with
+      # the Node 22 runner image.
+      - name: Use an npm that understands trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard against a tag that disagrees with package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+          echo "Tag and package.json agree on $PKG"
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Publish
+        run: npm publish
