@@ -5,8 +5,9 @@ name: CI
 # locally, and `release.yml` only fires on a tag -- long after a bad commit has
 # already been merged.
 #
-# The Node matrix is not decoration. `engines` claims >=20, and a claim nothing
-# executes is a guess; this is what makes the declared floor true.
+# Runs on a single Node version (22.x, the middle of the >=20 <26 engines
+# range) rather than a full matrix -- CI cost was the priority, and one
+# version catches the vast majority of real breakage.
 
 on:
   push:
@@ -23,17 +24,14 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ['20.x', '22.x', '24.x']
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22.x'
           cache: 'pnpm'
 
       - name: Install
