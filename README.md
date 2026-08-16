@@ -53,19 +53,16 @@ with the reply attached, for free.
 
 ## Install
 
-Not published to npm. Consumed as a git dependency pinned to a tag:
-
-```json
-{
-  "dependencies": {
-    "@domandigital/gbp": "github:Doman-Digital/dd-gbp#v0.1.0"
-  }
-}
+```bash
+pnpm add @domandigital/gbp
 ```
 
-`dist/` is committed to this repo (no CI build step runs on a git-dependency
-install), so no build step is required in the consuming project beyond a
-normal `pnpm install`.
+Public on npm, Apache-2.0, published with provenance from a tagged release.
+Zero runtime dependencies. ESM and CJS builds ship together, each with its own
+types. Requires Node 20 or newer.
+
+Upgrading a repo that still pins `github:Doman-Digital/dd-gbp#vX.Y.Z`? Swap it
+for a semver range.
 
 ## Env
 
@@ -80,6 +77,42 @@ normal `pnpm install`.
 Which actual Google Cloud OAuth client + refresh token you point at (the
 agency's shared credential, or a business's own dedicated one) is entirely a
 deployment-env decision, not a code-level one -- each app configures its own.
+
+## Minting a client's refresh token
+
+`GBP_REFRESH_TOKEN` can only be obtained by a human completing Google's consent
+flow as the business owner. `scripts/oauth-listener.mjs` in this repo automates
+everything around that: it prints a consent URL, catches Google's redirect on a
+local listener, exchanges the code, looks up the account and location IDs, and
+writes all three values straight to Doppler.
+
+The token and both IDs travel via argv into `doppler secrets set` and are never
+printed to stdout or returned from the process, so a captured terminal log can't
+leak them.
+
+This script is repo-only. It isn't in the package's `files`, so it's absent from
+the npm tarball, deliberately: it shells out to the `doppler` binary, which has
+no business being a runtime expectation of a public library. Clone the repo to
+use it.
+
+Run it from inside the **client's** repo, so `doppler secrets set` targets that
+client's own project and config via their local `.doppler.yaml` scoping:
+
+```bash
+GBP_CLIENT_ID=$(doppler secrets get GBP_CLIENT_ID --plain) GBP_CLIENT_SECRET=$(doppler secrets get GBP_CLIENT_SECRET --plain) node ../dd-gbp/scripts/oauth-listener.mjs
+```
+
+Two things that will bite you once each:
+
+- `http://127.0.0.1:3333/oauth2callback` has to be registered as an authorised
+  redirect URI on the OAuth client in the GCP console. If it isn't, Google
+  returns `redirect_uri_mismatch`.
+- If the account has already granted this app access, Google can decline to
+  issue a new refresh token even with `prompt=consent`. Revoke it at
+  https://myaccount.google.com/permissions and run the script again.
+
+If the account has more than one location, the script uses the first and prints
+every location it saw, so you can check it picked the right one.
 
 ## API
 
