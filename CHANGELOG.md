@@ -12,6 +12,8 @@ time.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-08-16
+
 ### Added
 
 - `GetBusinessReviewsOptions.order`, `"shuffle" | "api"`. Default is
@@ -118,7 +120,8 @@ time.
   `filterMinStars` and a Next.js `next` cache hint. Returns empty results rather
   than throwing when unconfigured, so UI can render unconditionally.
 
-[Unreleased]: https://github.com/Doman-Digital/dd-gbp/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Doman-Digital/dd-gbp/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/Doman-Digital/dd-gbp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Doman-Digital/dd-gbp/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Doman-Digital/dd-gbp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Doman-Digital/dd-gbp/compare/v0.1.0...v0.2.0
