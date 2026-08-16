@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": false,
   "description": "Zero-dependency Google Business Profile client: OAuth refresh-token auth and a reviews (with owner replies) fetch, shared across Doman Digital / IDS client sites.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -19,6 +19,8 @@
     }
   },
   "files": [
+    "LICENSE",
+    "README.md",
     "dist"
   ],
   "scripts": {
@@ -35,5 +37,17 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "pnpm@9.15.9",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Doman-Digital/dd-gbp.git"
+  },
+  "homepage": "https://github.com/Doman-Digital/dd-gbp#readme",
+  "bugs": {
+    "url": "https://github.com/Doman-Digital/dd-gbp/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

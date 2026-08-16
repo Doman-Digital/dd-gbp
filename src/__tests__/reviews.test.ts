@@ -143,7 +143,11 @@ describe("getBusinessReviews", () => {
 
     const result = await getBusinessReviews();
 
-    expect(result.reviews.map((r) => r.id)).toEqual(["r1", "r2"]);
+    // getBusinessReviews deliberately shuffles its result, so assert on the
+    // set of ids rather than their order. Asserting order here made this test
+    // fail roughly half the time, since with two reviews a shuffle returns the
+    // input order only 50% of the time.
+    expect(result.reviews.map((r) => r.id).sort()).toEqual(["r1", "r2"]);
     // token exchange + 2 review pages
     expect(fetchSpy).toHaveBeenCalledTimes(3);
     const secondPageUrl = fetchSpy.mock.calls[2][0] as string;
