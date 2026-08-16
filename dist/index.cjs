@@ -79,6 +79,11 @@ function shuffleArray(arr) {
   }
   return copy;
 }
+function isUsableReview(r, filterMinStars) {
+  if (!r.comment || !r.starRating) return false;
+  if (filterMinStars !== void 0 && STAR_VALUES[r.starRating] < filterMinStars) return false;
+  return true;
+}
 var EMPTY = {
   averageRating: null,
   totalReviewCount: 0,
@@ -102,7 +107,7 @@ function toBusinessReview(r) {
   return review;
 }
 async function getBusinessReviews(options = {}) {
-  const { limit, filterMinStars, next } = options;
+  const { limit, filterMinStars, next, order = "shuffle" } = options;
   if (!isBusinessProfileConfigured()) return EMPTY;
   const token = await getGoogleOAuthAccessToken();
   if (!token) return EMPTY;
@@ -127,12 +132,12 @@ async function getBusinessReviews(options = {}) {
     averageRating = data.averageRating ?? averageRating;
     totalReviewCount = data.totalReviewCount ?? totalReviewCount;
     pageToken = data.nextPageToken;
-  } while (pageToken && (limit === void 0 || raw.length < limit));
-  const reviews = raw.filter((r) => r.comment && r.starRating).filter((r) => filterMinStars === void 0 || STAR_VALUES[r.starRating] >= filterMinStars).map(toBusinessReview).slice(0, limit);
+  } while (pageToken && (limit === void 0 || raw.filter((r) => isUsableReview(r, filterMinStars)).length < limit));
+  const reviews = raw.filter((r) => isUsableReview(r, filterMinStars)).map(toBusinessReview).slice(0, limit);
   return {
     averageRating: averageRating ?? null,
     totalReviewCount: totalReviewCount ?? reviews.length,
-    reviews: shuffleArray(reviews)
+    reviews: order === "api" ? reviews : shuffleArray(reviews)
   };
 }
 // Annotate the CommonJS export names for ESM import in node:

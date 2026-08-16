@@ -12,6 +12,27 @@ time.
 
 ## [Unreleased]
 
+### Added
+
+- `GetBusinessReviewsOptions.order`, `"shuffle" | "api"`. Default is
+  `"shuffle"`, unchanged from prior behaviour. `"api"` preserves the Business
+  Profile API's own `updateTime desc` ordering instead.
+
+### Fixed
+
+- **`limit` could silently under-return.** Pagination stopped once `raw.length`
+  reached `limit`, but the comment/star-rating filter that determines which
+  reviews are actually usable ran after the loop. A page that was mostly
+  star-only ratings with no comment -- which the API allows -- could satisfy
+  the raw count while producing far fewer, or zero, usable reviews, with no
+  error and no further pages fetched. The stopping condition now counts
+  usable reviews, so `limit` means "give me N reviews you can show."
+
+### Changed
+
+- `limit`'s doc comment now says what it actually counts (usable reviews, not
+  raw API results), matching the fix above.
+
 ## [0.3.1] - 2026-08-16
 
 ### Added

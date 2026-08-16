@@ -185,4 +185,64 @@ describe("getBusinessReviews", () => {
 
     await expect(getBusinessReviews()).rejects.toThrow(/Business Profile reviews failed: 500/);
   });
+
+  it("keeps paginating until enough usable reviews are found, not enough raw ones", async () => {
+    // Regression: the first page is entirely star-only ratings with no
+    // comment, which the API allows and this library discards. Stopping on
+    // raw.length alone would return zero reviews for a limit of 1, even
+    // though page two has a usable one.
+    setConfigured();
+    const fetchSpy = vi.spyOn(global, "fetch");
+    fetchSpy.mockResolvedValueOnce(mockTokenExchange() as Response);
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        averageRating: 4.5,
+        totalReviewCount: 2,
+        nextPageToken: "page-2",
+        reviews: [
+          { reviewId: "r1", reviewer: { displayName: "A" }, starRating: "FIVE" }, // no comment
+        ],
+      }),
+    } as Response);
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        averageRating: 4.5,
+        totalReviewCount: 2,
+        reviews: [
+          { reviewId: "r2", reviewer: { displayName: "B" }, starRating: "FIVE", comment: "Great.", createTime: "t2" },
+        ],
+      }),
+    } as Response);
+
+    const result = await getBusinessReviews({ limit: 1 });
+
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0].id).toBe("r2");
+    // token exchange + 2 review pages
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it("order: 'api' preserves the API's own ordering instead of shuffling", async () => {
+    setConfigured();
+    const fetchSpy = vi.spyOn(global, "fetch");
+    fetchSpy.mockResolvedValueOnce(mockTokenExchange() as Response);
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        averageRating: 5,
+        totalReviewCount: 3,
+        reviews: [
+          { reviewId: "r1", reviewer: { displayName: "A" }, starRating: "FIVE", comment: "x", createTime: "t1" },
+          { reviewId: "r2", reviewer: { displayName: "B" }, starRating: "FIVE", comment: "y", createTime: "t2" },
+          { reviewId: "r3", reviewer: { displayName: "C" }, starRating: "FIVE", comment: "z", createTime: "t3" },
+        ],
+      }),
+    } as Response);
+
+    const result = await getBusinessReviews({ order: "api" });
+
+    expect(result.reviews.map((r) => r.id)).toEqual(["r1", "r2", "r3"]);
+  });
 });

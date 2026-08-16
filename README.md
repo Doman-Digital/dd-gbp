@@ -140,8 +140,9 @@ interface BusinessReview {
 
 Options:
 
-- `limit?: number` -- stop paginating once this many reviews are collected.
-  Omit to fetch all of them.
+- `limit?: number` -- stop paginating once this many *usable* reviews are
+  collected (a raw result needs both a comment and a star rating to count, and
+  `filterMinStars` narrows it further). Omit to fetch all of them.
 - `filterMinStars?: number` -- drop reviews below this rating. Use for a
   public testimonial feed; omit for an owner-facing surface where the point
   is to see everything. `totalReviewCount` always reflects the location's
@@ -149,6 +150,11 @@ Options:
 - `next?: { revalidate?: number; tags?: string[] }` -- passed straight through
   to `fetch`'s Next.js cache-hint augmentation. A no-op outside Next.js.
   Default: revalidate hourly.
+- `order?: "shuffle" | "api"` -- `"shuffle"` (default) randomizes the returned
+  order, applied after `limit`. `"api"` preserves the Business Profile API's
+  own ordering (`updateTime desc`, most recent first). Pick `"api"` for
+  anything that should read as chronological, e.g. an activity feed; the
+  default suits a testimonial grid where a fixed order would look stale.
 
 Never throws on missing configuration -- `isBusinessProfileConfigured()` gates
 internally and returns an empty result, so UI can render unconditionally.

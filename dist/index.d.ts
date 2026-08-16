@@ -64,8 +64,11 @@ interface BusinessReviewsResult {
 }
 /** True when account + location + OAuth credentials are all configured. */
 declare function isBusinessProfileConfigured(): boolean;
+type ReviewOrder = "shuffle" | "api";
 interface GetBusinessReviewsOptions {
-    /** Max reviews to return (default: all of them, paginated). */
+    /** Max reviews to return (default: all of them, paginated). Counts usable
+     * reviews only -- see `filterMinStars` -- so this is "give me N reviews you
+     * can show", not "give me N raw API results". */
     limit?: number;
     /**
      * When set, only reviews at or above this star rating are returned -- for
@@ -80,6 +83,12 @@ interface GetBusinessReviewsOptions {
         revalidate?: number;
         tags?: string[];
     };
+    /**
+     * `"shuffle"` (default): randomizes the returned order, applied after
+     * `limit`. `"api"`: preserves the Business Profile API's own ordering
+     * (`updateTime desc`, most recent first).
+     */
+    order?: ReviewOrder;
 }
 /**
  * Fetch reviews for the configured location, paginating through all pages

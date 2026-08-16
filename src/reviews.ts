@@ -50,6 +50,16 @@ function shuffleArray<T>(arr: T[]): T[] {
   return copy;
 }
 
+/** A raw review is only usable once it has both a comment and a star rating,
+ * and (if filterMinStars is set) clears that bar. Shared between the
+ * pagination stopping condition and the final filter, so the two can never
+ * disagree about what counts. */
+function isUsableReview(r: RawReview, filterMinStars: number | undefined): boolean {
+  if (!r.comment || !r.starRating) return false;
+  if (filterMinStars !== undefined && STAR_VALUES[r.starRating] < filterMinStars) return false;
+  return true;
+}
+
 export interface ReviewReply {
   text: string;
   /** ISO 8601, when the reply was last posted/edited. */
@@ -103,8 +113,12 @@ interface RawReviewsPage {
   nextPageToken?: string;
 }
 
+export type ReviewOrder = "shuffle" | "api";
+
 export interface GetBusinessReviewsOptions {
-  /** Max reviews to return (default: all of them, paginated). */
+  /** Max reviews to return (default: all of them, paginated). Counts usable
+   * reviews only -- see `filterMinStars` -- so this is "give me N reviews you
+   * can show", not "give me N raw API results". */
   limit?: number;
   /**
    * When set, only reviews at or above this star rating are returned -- for
@@ -116,6 +130,12 @@ export interface GetBusinessReviewsOptions {
   /** Cache-hint passed straight through to `fetch`'s Next.js augmentation.
    * A no-op outside Next.js. Default: revalidate hourly. */
   next?: { revalidate?: number; tags?: string[] };
+  /**
+   * `"shuffle"` (default): randomizes the returned order, applied after
+   * `limit`. `"api"`: preserves the Business Profile API's own ordering
+   * (`updateTime desc`, most recent first).
+   */
+  order?: ReviewOrder;
 }
 
 function toBusinessReview(r: RawReview): BusinessReview {
@@ -141,7 +161,7 @@ function toBusinessReview(r: RawReview): BusinessReview {
 export async function getBusinessReviews(
   options: GetBusinessReviewsOptions = {},
 ): Promise<BusinessReviewsResult> {
-  const { limit, filterMinStars, next } = options;
+  const { limit, filterMinStars, next, order = "shuffle" } = options;
 
   if (!isBusinessProfileConfigured()) return EMPTY;
 
@@ -181,17 +201,24 @@ export async function getBusinessReviews(
     averageRating = data.averageRating ?? averageRating;
     totalReviewCount = data.totalReviewCount ?? totalReviewCount;
     pageToken = data.nextPageToken;
-  } while (pageToken && (limit === undefined || raw.length < limit));
+    // Stop once enough *usable* reviews have been seen, not enough raw ones.
+    // A page can be mostly ratings with no comment (comment/starRating are
+    // both optional on GBP's own schema) or below filterMinStars, in which
+    // case stopping on raw.length alone under-fills `limit` even though a
+    // later page would have supplied enough.
+  } while (
+    pageToken &&
+    (limit === undefined || raw.filter((r) => isUsableReview(r, filterMinStars)).length < limit)
+  );
 
   const reviews: BusinessReview[] = raw
-    .filter((r) => r.comment && r.starRating)
-    .filter((r) => filterMinStars === undefined || STAR_VALUES[r.starRating!] >= filterMinStars)
+    .filter((r) => isUsableReview(r, filterMinStars))
     .map(toBusinessReview)
     .slice(0, limit);
 
   return {
     averageRating: averageRating ?? null,
     totalReviewCount: totalReviewCount ?? reviews.length,
-    reviews: shuffleArray(reviews),
+    reviews: order === "api" ? reviews : shuffleArray(reviews),
   };
 }
