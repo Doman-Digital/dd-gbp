@@ -1,3 +1,9 @@
+> **This repo is archived.** `@domandigital/gbp` now lives in the
+> [dd-packages](https://github.com/Doman-Digital/dd-packages) monorepo, at
+> [`packages/gbp`](https://github.com/Doman-Digital/dd-packages/tree/main/packages/gbp).
+> Open issues and PRs there. This repo's history was preserved via subtree
+> merge; its own commits and tags stay here for reference.
+
 # @domandigital/gbp
 
 A zero-dependency Google Business Profile client for Doman Digital / IDS
